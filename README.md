@@ -13,3 +13,5 @@ Usage:
 2. All entries that have a "BDAY" are processed, all others are ignored.
 3. .ics is written (including with a calendar name)
 4. with an additional app like "DAVx" you can upload this .ics to a CalDAV provider (e.g. mail.de) and integrate it into the Android calendar.
+
+`python3 vcf_to_ics.py -i contacts.vcf -o birthdays.ics -n birthdays`
