@@ -21,14 +21,15 @@ On Android smartphones (perhaps others too?) this option is missing - it is not 
 
 It is, however, possible to integrate any CalDAV calendar using additional software such as [DAVx](https://www.davx5.com/). With the help of this Python script, you can create your own birthday calendar in ICS format, which can be loaded into CalDAV (e.g. mail.de) to then integrate it into the Android calendar.
 
-Workflow:
-**VCF -> Script -> ICS (with calendar name) -> CalDAV -> smartphone calendar**
+### Workflow
+**VCF -> this Script -> ICS (with calendar name) -> CalDAV -> smartphone calendar**
 
-In the Android calendar, an entry is then displayed as follows:
+In the Android calendar, an entry is then displayed as follows:  
 `Weather Mann 44`
 
 ## Usage
 
-```
+```python
+#                     <input file>    <output cal file>  <cal name>
 python3 vcf_to_ics.py -i contacts.vcf -o birthdays.ics -n birthdays
 ```
