@@ -12,6 +12,15 @@ In comparison, the code has been modernized and simplified for the intended limi
 ## What you need
 Contacts in VCF format with birthday data included (`BDAY` tag). All entries that have this tag will be processed, all others will be ignored.
 
+```ini
+BEGIN:VCARD
+VERSION:3.0
+BDAY:1993-06-28
+FN:Weather Mann
+N:Mann;Weather;;;
+UID:3cf6bd87-dab0-4275-8790-4eaa205e1cad
+END:VCARD
+```
 
 ## My environment
 
