@@ -1,34 +1,32 @@
 #!/usr/bin/env python3
+from dataclasses import dataclass
 from pathlib import Path
-#	##### BEGIN GPL LICENSE BLOCK #####
-#
-#	This program is free software; you can redistribute it and/or
-#	modify it under the terms of the GNU General Public License
-#	as published by the Free Software Foundation; either version 2
-#	of the License, or (at your option) any later version.
-#
-#	This program is distributed in the hope that it will be useful,
-#	but WITHOUT ANY WARRANTY; without even the implied warranty of
-#	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#	GNU General Public License for more details.
-#
-#	You should have received a copy of the GNU General Public License
-#	along with this program; if not, write to the Free Software Foundation,
-#	Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
-#
-#	##### END GPL LICENSE BLOCK #####
-
-
 from string import ascii_letters
 from string import digits
 import argparse
-import quopri
 import random
 import time
 import sys
-import os
-import re
 from datetime import datetime
+from typing import List
+
+# ##### BEGIN GPL LICENSE BLOCK #####
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+#
+# ##### END GPL LICENSE BLOCK #####
 
 # CONFIGURATION
 
@@ -36,63 +34,71 @@ PROGRAM_NAME = "VCF to ICS"
 PROGRAM_VERSION = "1.0"
 
 
-def get_dict(card: str) -> dict | None:
-    _dict = {}
-    for line in card.split("\n"):
-        elems = line.split(":")
-        key = elems[0]
-        if key in ("BDAY", "N", "FN"):
-            _dict[key] = "".join(elems[1:])
-    try:
-        bday = _dict["BDAY"]
-    except KeyError:
-        return None  # not usable
+@dataclass
+class VCF2ICS:
+    vcf_file: Path
 
-    _dict["BDAY"] = bday.split("T")[0]  # '2000-07-01T000000'
+    def process(self) -> list[str] | None:
+        # Read VCF file content
+        file_content = self.vcf_file.read_text(encoding="utf-8")
+        # Separate VCards
+        all_cards = file_content.split("END:VCARD")
+        print(f"{len(all_cards)} VCards found")
+        if not all_cards:
+            return None
 
-    try:
-        _dict["FN"]  # -> usable
-    except KeyError:
+        list_formatted_entries = []
+        for card in all_cards:
+            dict_card = self._get_dict(card)
+            if not dict_card:
+                continue
+            entry = self._parse_vcard_get_formatted_entry(dict_card)
+            list_formatted_entries.append(entry)
+        # for
+        print(f"\n{len(list_formatted_entries)} usable entries")
+        return list_formatted_entries
+
+    def _get_dict(self, card: str) -> dict[str] | None:
+        _dict = {}
+        for line in card.split("\n"):
+            elems = line.split(":")
+            key = elems[0]
+            if key in ("BDAY", "N", "FN"):
+                _dict[key] = "".join(elems[1:])
         try:
-            name = _dict["N"]
-            elems = name.split(";")
-            if elems[3]:
-                new_name = f"{elems[3]} {elems[1]} {elems[0]}"
+            bday = _dict["BDAY"]
+        except KeyError:
+            return None  # not usable
+
+        _dict["BDAY"] = bday.split("T")[0]  # '2000-07-01T000000'
+
+        try:
+            _dict["FN"]  # -> usable
+        except KeyError:
+            try:
+                name = _dict["N"]
+                elems = name.split(";")
+                if elems[3]:
+                    new_name = f"{elems[3]} {elems[1]} {elems[0]}"
+                else:
+                    new_name = f"{elems[1]} {elems[0]}"
+                _dict["FN"] = new_name
+            except KeyError:  # no information
+                _dict = None
             else:
-                new_name = f"{elems[1]} {elems[0]}"
-            _dict["FN"] = new_name
-        except KeyError:  # no information
-            _dict = None
+                del _dict["N"]
 
-    del _dict["N"]
+        return _dict
 
-    return _dict
-
-
-def write_ics_file(ics_file: Path, calendar_name: str, list_formatted_entries: list[str]):
-    with ics_file.open("w") as f:
-        # Write ICS calendar header
-        f.write(f"BEGIN:VCALENDAR\nPRODID:-//{PROGRAM_NAME}//NONSGML {calendar_name} V1.0//EN\n"
-                f"X-WR-CALNAME:{calendar_name}\nVERSION:2.0\n")
-        for entry in list_formatted_entries:
-            f.write(f"{entry}\n")
-        # Write ICS calendar footer
-        f.write("END:VCALENDAR\n")
-        print("\n->", ics_file)
-
-
-def parse_vcards_get_formatted_entries(vcards: list[dict]):
-    list_formatted_entries = []
-
-    for card in vcards:
+    def _parse_vcard_get_formatted_entry(self, vcard: dict[str]) -> str:
         # BDAY format:
         # BDAY:2000-07-01T00:00:00
         # or   2000-07-01
-        bday = card["BDAY"]
+        bday = vcard["BDAY"]
         year, month, day = bday.split("-")
         dt_birth_start = datetime(int(year), int(month), int(day))
         dt_birth_end = datetime(int(time.strftime("%Y")), int(month), int(day))  # current year!
-        name = card["FN"]
+        name = vcard["FN"]
 
         dt_diff = dt_birth_end - dt_birth_start
         days = dt_diff.days + 1  # ein Tag zuwenig
@@ -106,7 +112,7 @@ def parse_vcards_get_formatted_entries(vcards: list[dict]):
         calendar component. This property is mandatory in defining calendar components.
         Everyone must assure that this unique identifier is added at the Creation Time
         of his calendar component, to be sure of the uniqueness of all the components.
-        
+
         Consequences of not doing it right
         Because the UID globally identifies a calendar component, not having a good way of
         generating this property can cause a lot of problems. Using a simple UID generation
@@ -119,16 +125,26 @@ def parse_vcards_get_formatted_entries(vcards: list[dict]):
         uid = ''.join([random.choice(list(ascii_letters + digits)) for _ in range(16)]) + "@VCFtoICS.com"
         birth_start_str = dt_birth_start.strftime("%Y%m%d")
         full_uid = f"{birth_start_str}-{uid}"
-        entry = (f"BEGIN:VEVENT\nDTSTART:{birth_start_str}\nSUMMARY:{name} ({years})\n"
-                 f"RRULE:FREQ=YEARLY\nDURATION:P1D\nUID:{full_uid}\nEND:VEVENT")
-        list_formatted_entries.append(entry)
-    # for
-    return list_formatted_entries
+        list_block = [f"BEGIN:VEVENT", f"DTSTART:{birth_start_str}", f"SUMMARY:{name} ({years})",
+                      "RRULE:FREQ=YEARLY", "DURATION:P1D", f"UID:{full_uid}", "END:VEVENT"]
+        entry = "\n".join(list_block)
+        return entry
+
+    def write_ics_file(self, ics_file: Path, calendar_name: str, list_formatted_entries: list[str]):
+        with ics_file.open("w") as f:
+            # Write ICS calendar header
+            f.write(f"BEGIN:VCALENDAR\nPRODID:-//{PROGRAM_NAME}//NONSGML {calendar_name} V1.0//EN\n"
+                    f"X-WR-CALNAME:{calendar_name}\nVERSION:2.0\n")
+            for entry in list_formatted_entries:
+                f.write(f"{entry}\n")
+            # Write ICS calendar footer
+            f.write("END:VCALENDAR\n")
+            print("\n->", ics_file)
 
 
 if __name__ == "__main__":
     # Command-line interface
-    argParser = argparse.ArgumentParser(description=PROGRAM_NAME + " " + PROGRAM_VERSION)
+    argParser = argparse.ArgumentParser(description=f"{PROGRAM_NAME} {PROGRAM_VERSION}")
     argParser.add_argument('-i', '--input', metavar='PATH', help='Input .vcf file path', required=True)
     argParser.add_argument('-o', '--output', metavar='PATH', help='Output .ics file path', required=True)
     argParser.add_argument('-n', '--name', metavar='NAME', help='Desired calendar name', required=True)
@@ -142,25 +158,11 @@ if __name__ == "__main__":
         print("Invalid input file path:", vcf_file)
         sys.exit(1)
 
-    # Read VCF file content
-    file_content = vcf_file.read_text(encoding="utf-8")
-    # Separate VCards
-    all_cards = file_content.split("END:VCARD")
-    print(f"{len(all_cards)} VCards found")
-    if not all_cards:
+    vcf2ics = VCF2ICS(vcf_file)
+    list_formatted_entries = vcf2ics.process()
+
+    if not list_formatted_entries:
         sys.exit(1)
 
-    vcards = []
-    for card in all_cards:
-        d = get_dict(card)
-        if d:
-            #print(d)
-            vcards.append(d)
-        #else:
-        #    print("- Eintrag ignoriert")
-
-    print(f"{len(vcards)} usable entries\n")
-
-    list_formatted_entries = parse_vcards_get_formatted_entries(vcards)
     # Write ICS event:
-    write_ics_file(ics_file, calendar_name, list_formatted_entries)
+    vcf2ics.write_ics_file(ics_file, calendar_name, list_formatted_entries)
