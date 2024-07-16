@@ -24,11 +24,17 @@ END:VCARD
 
 ## My environment
 
+### VCF file
 The VCF file format comes from the KDE/Plasma *KAddressBook*, which can be integrated into *KOrganizer* as a birthday calendar.
+
+### Phone
+
+Samsung Phone with Android 13
 
 On Android smartphones (perhaps others too?) this option is missing - it is not possible to import a VCF file into the calendar app **without using the Google calendar**.
 
 It is, however, possible to integrate any CalDAV calendar using additional software such as [DAVx](https://www.davx5.com/). With the help of this Python script, you can create your own birthday calendar in ICS format, which can be loaded into CalDAV (e.g. mail.de) to then integrate it into the Android calendar.
+
 
 ### Workflow
 **VCF -> this Script -> ICS (with calendar name) -> CalDAV -> smartphone calendar**
