@@ -42,3 +42,6 @@ In the Android calendar, an entry is then displayed as follows:
 #                     <input file>    <output cal file>  <cal name>
 python3 vcf_to_ics.py -i contacts.vcf -o birthdays.ics -n birthdays
 ```
+
+## Disadvantages
+You need to renew the .ics file every year because of the feature of pre-calculated age in the contact name :-(
