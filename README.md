@@ -2,7 +2,7 @@
 Python project to convert vcf contacts to an ics calendar file, which contains the **birthdays** of the contacts
 
 Purpose of the application:
-**Display birthdays in the Android calendar.**  
+**Display birthdays in the Android calendar _without the need to use the Google Calendar_.**  
 For this purpose it reads the `BDAY` tag from a vcf contacts file, writes the birthdays together with the calculated age into an ics calendar file.
 
 This project was inspired by https://github.com/FoxP/VCF-to-ICS  
