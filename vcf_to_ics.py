@@ -63,7 +63,7 @@ class VCF2ICS:
         for line in card.split("\n"):
             elems = line.split(":")
             key = elems[0]
-            if key in ("BDAY", "N", "FN"):
+            if key in ("BDAY", "N", "FN", "UID"):
                 _dict[key] = "".join(elems[1:])
         try:
             bday = _dict["BDAY"]
@@ -106,7 +106,19 @@ class VCF2ICS:
         # print(f"{name}: {dt_birth_start} {dt_birth_end} {years}")
         print(f"{name}: {years}")
 
-        """ Unique ID
+        birth_start_str = dt_birth_start.strftime("%Y%m%d")
+        try:
+            uid = vcard["UID"]
+        except KeyError:  # not a problem, can be generated later
+            uid = self._generate_uid(birth_start_str)
+
+        list_block = [f"BEGIN:VEVENT", f"DTSTART:{birth_start_str}", f"SUMMARY:{name} ({years})",
+                      "RRULE:FREQ=YEARLY", "DURATION:P1D", f"UID:{uid}", "END:VEVENT"]
+        entry = "\n".join(list_block)
+        return entry
+
+    def _generate_uid(self, birth_start_str: str):
+        """Unique ID
         The UID purpose is to define a unique identifier across all the calendar components.
         It is basically a random generated sequence that will assure the uniqueness of every
         calendar component. This property is mandatory in defining calendar components.
@@ -123,12 +135,7 @@ class VCF2ICS:
         UID all the time, so that no matter which part of the event is changed, the UID-Reference
         is the same and the calendar can be updated until that event will be deleted. """
         uid = ''.join([random.choice(list(ascii_letters + digits)) for _ in range(16)]) + "@VCFtoICS.com"
-        birth_start_str = dt_birth_start.strftime("%Y%m%d")
-        full_uid = f"{birth_start_str}-{uid}"
-        list_block = [f"BEGIN:VEVENT", f"DTSTART:{birth_start_str}", f"SUMMARY:{name} ({years})",
-                      "RRULE:FREQ=YEARLY", "DURATION:P1D", f"UID:{full_uid}", "END:VEVENT"]
-        entry = "\n".join(list_block)
-        return entry
+        return f"{birth_start_str}-{uid}"
 
     def write_ics_file(self, ics_file: Path, calendar_name: str, list_formatted_entries: list[str]):
         with ics_file.open("w") as f:
