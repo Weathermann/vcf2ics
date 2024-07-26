@@ -1,4 +1,7 @@
 bak/
+__pycache__/
 .idea/
+venv/
 birthdays.ics*
 addressbook_version4.vcf
+pycharm.sh
