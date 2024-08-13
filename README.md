@@ -50,4 +50,4 @@ python3 vcf_to_ics.py -i contacts.vcf -o birthdays.ics -n birthdays
 ```
 
 ## Disadvantages
-You need to renew the .ics file every year because of the feature of pre-calculated age in the contact name :-(
+You need to renew the .ics file every year to get the correct pre-calculated age in the contact name, but this is not a big problem.
