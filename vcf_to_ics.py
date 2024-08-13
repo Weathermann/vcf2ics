@@ -80,19 +80,20 @@ def create_vcard(card: str) -> Vcard | None:
     except KeyError:
         return  # not usable
 
-    try:
-        name = working_dict["FN"]  # -> usable
+    try:  # prefer "N" over "FN"
+        name = working_dict["N"]  # separate parts
     except KeyError:
         try:
-            name = working_dict["N"]
-            elems = name.split(";")
-            if elems[3]:
-                new_name = f"{elems[3]} {elems[1]} {elems[0]}"
-            else:
-                new_name = f"{elems[1]} {elems[0]}"
-            name = new_name
+            name = working_dict["FN"]  # one element
         except KeyError:  # no information
             return
+    else:
+        elems = name.split(";")
+        if elems[3]:  # Dr.
+            new_name = f"{elems[3]} {elems[1]} {elems[0]}"
+        else:
+            new_name = f"{elems[1]} {elems[0]}"
+        name = new_name
 
     vcard = Vcard(name)
     vcard.set_birthday(bday)

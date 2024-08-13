@@ -17,6 +17,15 @@ UID:3cf6bd87-dab0-4275-8790-4eaa205e1cad
 END:VCARD
 """
 
+card_name_with_dr = """BEGIN:VCARD
+VERSION:3.0
+BDAY:1959-06-16T00:00:00
+FN:Max Muster
+N:Muster;Max;;Dr.;
+UID:pas-id-4B5EFF8D0000005C
+END:VCARD
+"""
+
 
 def test_should_create_vcard():
     vcard = create_vcard(card_ok)
@@ -37,3 +46,8 @@ def test_without_uid():
     vcard = create_vcard(new_vcard_input)
     # print("###", vcard.uid)
     assert vcard.uid.startswith("19930628")
+
+
+def test_name_with_doctorate():
+    vcard = create_vcard(card_name_with_dr)
+    assert vcard.name == "Dr. Max Muster"
